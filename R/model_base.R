@@ -127,7 +127,7 @@ model_run_info <-
 saveRDS(model_run_info, file = here::here("models", "model_base.RDS"))
 
 
-p1 <- plotSero(seroModel_p1, 1000)
+p1 <- plotSero(seroModel_p1, 100)
 ggsave(here::here("outputs", "manu", "pre", "serodata.pdf"))
 p2 <- plotPriorPredictive(seroModel_p1)
 ggsave(here::here("outputs", "manu", "pre", "abkin_priorpred.pdf"))

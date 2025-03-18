@@ -128,7 +128,7 @@ p3 <- y_hat_new_post_age %>%
 
    # facet_wrap(vars(j)) +
 #scale_x_continuous(breaks = seq(0, 1, length.out = 10), labels = labels_x_spike) + 
-    labs(x = "PreF titre (log10)", y = "Relative probability of protection", color = "Biomarker") + 
+    labs(x = "PreF titre (log10)", y = "Relative probability of infection", color = "Biomarker") + 
     ggtitle("C. Fitted curves for relative COP") + theme_ft() 
 
 p1 / (p2 + p3) + plot_layout(guides = "collect")
