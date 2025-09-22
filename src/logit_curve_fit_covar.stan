@@ -30,30 +30,27 @@ parameters {
   real<lower=0> k_sigma;  
   real<lower=0> x0_sigma;  
 }
-
-model {
-  vector[N] y_hat;
-  
-  // Logistic function for curve fitting
+transformed parameters {
+  vector[N] y_hat_est;
   for (n in 1:N) {
     real L = inv_logit(L_global + L_deviation[x_cov[n]] * L_sigma);  // L for each group
     real k = k_global + k_deviation[x_cov[n]] * k_sigma;  // k for each group
     real x0 = x0_global + x0_deviation[x_cov[n]] * x0_sigma; // x0 for each group
-
-    y_hat[n] = L * (1 - 1 / (1 + exp(-k * (x[n] - x0))));
+    y_hat_est[n] = L * (1 - 1 / (1 + exp(-k * (x[n] - x0))));
   }
-
+}
+model {  
   // Likelihood: Assume normal residuals
-  y ~ normal(y_hat, sigma);
+  y ~ normal(y_hat_est, sigma);
 
   // Priors
-  L_global ~ normal(0, 1.84);      // Prior for upper asymptote
-  k_global ~ uniform(0, 5);        // Prior for steepness
+  L_global ~ normal(0, 1.5);      // Prior for upper asymptote
+  k_global ~ normal(0, 5);        // Prior for steepness
   x0_global ~ normal(midpoint, midpoint / 2);       // Prior for midpoint
 
 // Group-level priors (for the deviations)
   L_sigma ~ exponential(1);
-  k_sigma ~ normal(0, 1);
+  k_sigma ~ exponential(1);
   x0_sigma ~  exponential(1);
 
   // Deviations for each group drawn from normal distributions centered around 0
@@ -75,6 +72,18 @@ generated quantities {
     vector[N_cov] L_temp;
     vector[N_cov] k_temp;
     vector[N_cov] x0_temp;
+    
+    // Log-likelihood for LOO
+    vector[N] log_lik;
+    
+    // Calculate log-likelihood for each observation
+    for (n in 1:N) {
+      real L = inv_logit(L_global + L_deviation[x_cov[n]] * L_sigma);  // L for this group
+      real k = k_global + k_deviation[x_cov[n]] * k_sigma;  // k for this group
+      real x0 = x0_global + x0_deviation[x_cov[n]] * x0_sigma; // x0 for this group
+      real y_hat_n = L * (1 - 1 / (1 + exp(-k * (x[n] - x0))));
+      log_lik[n] = normal_lpdf(y[n] | y_hat_n, sigma);
+    }
     
     // Posterior prediction
    

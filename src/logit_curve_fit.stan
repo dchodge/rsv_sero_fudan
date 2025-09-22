@@ -41,6 +41,15 @@ generated quantities {
     vector[100] y_prot;
     vector[100] x_new;
     
+    // Log-likelihood for LOO
+    vector[N] log_lik;
+    
+    // Calculate log-likelihood for each observation
+    for (n in 1:N) {
+      real y_hat_n = L * (1 - 1 / (1 + exp(-k * (x[n] - x0))));
+      log_lik[n] = normal_lpdf(y[n] | y_hat_n, sigma);
+    }
+    
     // Posterior prediction
     for (i in 1:100) {
       x_new[i] = x_min + (i - 1) * step;
