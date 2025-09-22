@@ -70,15 +70,15 @@ plotPostFigs(model_summary, save_info = models$save[[1]])
 models <- readRDS(here::here("models", "model_base_hier_2.RDS"))
 
 # Note: Parallel processing already set up above
-# plan(multisession, workers = 4)
+plan(multisession, workers = 6)
 
 # Configure MCMC settings for the hierarchical model
 # Reduced iterations for faster testing (can be increased for final analysis)
 rj_settings <- list(
-    numberChainRuns = 4,        # Number of MCMC chains
-    iterations = 1000,          # Total iterations per chain (reduced for testing)
-    burninPosterior = 500,      # Burn-in period (50% of iterations)
-    thin = 1,                   # No thinning for shorter runs
+    numberChainRuns = 6,        # Number of MCMC chains
+    iterations = 500000,          # Total iterations per chain (reduced for testing)
+    burninPosterior = 250000,      # Burn-in period (50% of iterations)
+    thin = 1000,                   # No thinning for shorter runs
     runParallel = TRUE,         # Enable parallel processing
     onDebug = FALSE             # Disable debug mode
 )
@@ -94,12 +94,16 @@ save_info_base_hier <- list(
 model_summary <- runSeroJump(models$model[[1]], rj_settings, save_info = models$save[[1]])
 
 # Alternative: Load previously fitted model if available
-# model_summary <- readRDS(here::here("outputs", "fits", "fudan_e3", "base_hier", "model_summary.RDS"))
+model_summary <- readRDS(here::here("outputs", "fits", "fudan_e3", "base_hier", "model_summary.RDS"))
 
 # Generate diagnostic plots and results for the hierarchical model
 # Note: Requires save_info to be properly configured
 plotMCMCDiagnosis(model_summary, save_info = models$save[[1]])
 plotPostFigs(model_summary, save_info = models$save[[1]])
+
+
+
+
 
 
 # =============================================================================

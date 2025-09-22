@@ -1,11 +1,9 @@
-# WAVE 2: PCR 
 
 model_summary <- readRDS(file = "./outputs/fits/fudan_e3_hpc/base_hier_2/model_summary.RDS")
 
 #plotMCMCDiagnosis(model_summary, save_info = save_info)
 # takes ages to run these so comment out!
 #plotPostFigs(model_summary, save_info = save_info) 
-
 
 fitfull <- model_summary$fit    
 outputfull <- model_summary$post
@@ -23,7 +21,6 @@ data_t <- fitfull$data_t
 # Make Figure 4
 ## Get antibody kinetics
 abkin_df_ind <- readRDS(file = "./outputs/fits/fudan_e3_hpc/base_hier_2/figs/post/plt_data/ab_kinetics_recov_indiv_ High.RDS")
-
 
 
 abkin_df_ind[[1]] <- abkin_df_ind[[1]] %>% mutate(date = days(t) + ymd("2023-01-01") )
@@ -103,9 +100,11 @@ n_chains <- outputfull$n_chains
 n_post <- outputfull$n_post
 n_length <- n_chains * n_post
 
+df_sero_model_age <- data_t$raw_sero %>% select(id, age_group) %>% unique %>% 
+    mutate(age_group = recode(age_group, "<=5" = "≤5", "5-18" = "5-18", "19-59" = "19-59", "60-74" = "60-74", "75+" = "75+"))
+
 length_i <- 4 * (fit_states %>% left_join(df_sero_model_age) %>% pull(sample_c) %>% max)
 
-df_sero_model_age <- data_t$raw_sero %>% select(id, age_group) %>% unique
 
 fit_states_age_1 <- fit_states %>% left_join(df_sero_model_age) %>%
     summarise(inf_tot = sum(inf_ind), n = n(), .by = c("age_group")) %>% 
@@ -129,3 +128,98 @@ pDii <- fit_states_age_alt %>%
 pA / pBC / (pDi + pDii) + plot_layout(heights = c(2, 1, 1))
 ggsave(here::here("outputs", "manu", "main", "manu_fudan_wave2.png"), width = 12, height = 15)
 ggsave(here::here("outputs", "manu", "main", "manu_fudan_wave2.pdf"), width = 12, height = 15)
+
+
+
+
+
+
+
+# Extract values for paragraph 1 of results
+cat("=== VALUES FOR PARAGRAPH 1 OF RESULTS ===\n")
+
+# Total individuals included
+total_individuals <- N
+cat("Total individuals included:", total_individuals, "\n")
+
+# Calculate excluded subjects (those with only single sample)
+# This would need to be calculated from your data - assuming 6 based on your text
+excluded_subjects <- 6  # You may need to calculate this from your actual data
+cat("Excluded subjects (single sample):", excluded_subjects, "\n")
+
+get_median_95ci <- function(x) {
+    data.frame(
+        median = median(x),
+        lb = quantile(x, 0.025),
+        ub = quantile(x, 0.975)
+    )
+}
+
+# Total infected individuals across both waves
+extract_infections <- map_df(1:length(inferred_wave), ~
+    data.frame(
+        sample = .x,
+        wave_number = c("Wave 1", "Wave 2"),
+        tot = (inferred_wave[[.x]] %>% summarise(sum = sum(count), .by = wave_number) %>% pull(sum)))
+) 
+
+
+inf_all <- extract_infections %>% group_by(sample) %>% summarise(tot = sum(tot)) %>%
+    summarise(get_median_95ci(tot))
+
+inf_wave <- extract_infections %>% group_by(wave_number) %>% summarise(get_median_95ci(tot)) 
+inf_rate_wave <- extract_infections %>% group_by(wave_number) %>% summarise(get_median_95ci(tot) / 502) 
+
+# Wave-specific attack rates
+wave1_rate <- round(inf_wave$median[inf_wave$wave_number == "Wave 1"] / N * 100, 1)
+wave1_rate_lb <- round(inf_wave$lb[inf_wave$wave_number == "Wave 1"] / N * 100, 1)
+wave1_rate_ub <- round(inf_wave$ub[inf_wave$wave_number == "Wave 1"] / N * 100, 1)
+
+wave2_rate <- round(inf_wave$median[inf_wave$wave_number == "Wave 2"] / N * 100, 1)
+wave2_rate_lb <- round(inf_wave$lb[inf_wave$wave_number == "Wave 2"] / N * 100, 1)
+wave2_rate_ub <- round(inf_wave$ub[inf_wave$wave_number == "Wave 2"] / N * 100, 1)
+
+# Age-specific rates
+age_rates <- fit_states_age_alt %>% 
+    mutate(rate_pct = round(inf_rate * 100, 1)) %>%
+    select(age_group, rate_pct)
+
+cat("Age-specific attack rates (both waves combined):\n")
+print(age_rates)
+
+# Young children rate (≤5 years)
+young_children_rate <- age_rates$rate_pct[age_rates$age_group == "≤5"]
+cat("Young children (≤5 years) rate:", young_children_rate, "%\n")
+
+# Adults rates (assuming 19-59 and 60-74 are adults)
+adults_19_59_rate <- age_rates$rate_pct[age_rates$age_group == "19-59"]
+adults_60_74_rate <- age_rates$rate_pct[age_rates$age_group == "60-74"]
+adults_75plus_rate <- age_rates$rate_pct[age_rates$age_group == "75+"]
+
+# Calculate overall adult rate (weighted average or simple average)
+adults_wave1_rate <- round(mean(c(adults_19_59_rate, adults_60_74_rate, adults_75plus_rate)), 1)
+
+cat("Adults rate (19+ years):", adults_wave1_rate, "%\n")
+
+# Create a summary for easy copying
+cat("\n=== SUMMARY FOR MARKDOWN ===\n")
+inf_info <- list(
+    total_individuals = total_individuals,
+    excluded_subjects = excluded_subjects,
+    total_infected = inf_all$median,
+    total_infected_lb = inf_all$lb,
+    total_infected_ub = inf_all$ub,
+    wave1_rate = wave1_rate,
+    wave1_rate_lb = wave1_rate_lb,
+    wave1_rate_ub = wave1_rate_ub,
+    wave2_rate = wave2_rate,
+    wave2_rate_lb = wave2_rate_lb,
+    wave2_rate_ub = wave2_rate_ub,
+    young_children_rate = young_children_rate,
+    adults_19_59_rate = adults_19_59_rate,
+    adults_60_74_rate = adults_60_74_rate,
+    adults_75plus_rate = adults_75plus_rate,
+    adults_wave1_rate = adults_wave1_rate
+)
+
+saveRDS(inf_info, file = here::here("markdown", "inf_info.RDS"))

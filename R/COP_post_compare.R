@@ -1,5 +1,10 @@
 model_type <- "base" # base
 
+inv_logit <- function(x) {
+  1 / (1 + exp(-x))
+}
+
+
 post_base <- readRDS(here::here("outputs", "fits_stan", "base", "cop_data_post.RDS"))
 post_age <- readRDS(here::here("outputs", "fits_stan", "age_cov", "cop_data_post.RDS"))
 

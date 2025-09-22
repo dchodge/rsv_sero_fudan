@@ -1,13 +1,13 @@
-chains_keep <- c(1, 2, 3, 4)
+chains_keep <- c(3, 4, 5, 6)
 
 generate_convergence_plot <- function(model_summary, title_i) {
     df_smi_df <- calcScaleModelIndicator(model_summary)
 
-    df_smi_df <- df_smi_df %>% filter(.chain %in% chains_keep)  %>% mutate(.chain = recode(.chain, "1" = "1", "2" = "2", "3" = "3", "4" = "4") )
+    df_smi_df <- df_smi_df %>% filter(.chain %in% chains_keep)  %>% mutate(.chain = recode(.chain, "5" = "1", "6" = "2", "3" = "3", "4" = "4") )
 
     fit <- model_summary$fit
     p1 <- (fit$post$mcmc[chains_keep]  %>% bayesplot::mcmc_trace()) + theme_minimal() + theme(legend.position = "top") + ggtitle("A. Trace plots for fitted parameters")
-    p2 <- fit$post$lpost %>% filter(chain_no %in% chains_keep) %>% mutate(chain_no = recode(chain_no, "1" = "1", "2" = "2", "3" = "3", "4" = "4")) %>%
+    p2 <- fit$post$lpost %>% filter(chain_no %in% chains_keep) %>% mutate(chain_no = recode(chain_no, "5" = "1", "6" = "2", "3" = "3", "4" = "4")) %>%
         ggplot() + geom_line(aes(x = sample_no, y = lpost, color = chain_no))  + theme_minimal() + theme(legend.position = "top")  + ggtitle("B. Trace plots for log posterior") + 
         labs(x = "Sample number", y = "Log-posterior")
 
@@ -71,7 +71,7 @@ plot_Rhat_time_alt <- function(model_summary, title_i) {
     model_outline <- model_summary$fit$model
     bio_all <- model_outline$infoModel$biomarkers
 
-    fit_states_dt <- as.data.table(outputfull$fit_states) %>% filter(chain_no %in% chains_keep)
+    fit_states_dt <- as.data.table(outputfull$fit_states) %>% filter(chain_no %in% chains_keep) %>% mutate(chain_no = recode(chain_no, "5" = "1", "6" = "2", "3" = "3", "4" = "4") )
     S <- fit_states_dt %>% filter(id == 1) %>% nrow
 
     ids <- fit_states_dt %>% group_by(id) %>% summarise(prob = sum(inf_ind) / S) %>% filter(prob > 0.5) %>% pull(id) %>% unique
@@ -116,7 +116,7 @@ plot_Rhat_time_alt <- function(model_summary, title_i) {
 }
 
 # CASE STUDY 2: TRANSVIR, NO PCR
-model_summary <- readRDS(here::here("outputs", "fits", "fudan_e3_hpc", "base_hier_2", paste0("model_summary.RDS")))
+model_summary <- readRDS(here::here("outputs", "fits", "fudan_e3", "base_hier_2", paste0("model_summary.RDS")))
 p1 <- generate_convergence_plot(model_summary, "RJ-MCMC MODEL FIT FOR SEROJUMP")
 ggsave(here::here("outputs", "manu", "supp", "rsv_fudan_conv.png"), height = 20, width = 20)
 p2 <- plot_Rhat_time_alt(model_summary,  "RJ-MCMC MODEL FIT FOR SEROJUMP")

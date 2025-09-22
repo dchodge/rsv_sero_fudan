@@ -11,7 +11,7 @@
 
 # Load the fitted serological jump model results
 # This contains the posterior estimates of infection timing and antibody kinetics
-model_summary <- readRDS(here::here("outputs", "fits", "fudan_e3_hpc", "base_hier_2", paste0("model_summary.RDS")))
+model_summary <- readRDS(here::here("outputs", "fits", "fudan_e3", "base_hier_2", paste0("model_summary.RDS")))
 
 # =============================================================================
 # Extract Model Components and Prepare Data

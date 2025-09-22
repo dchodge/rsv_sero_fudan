@@ -238,3 +238,99 @@ df_o4_all <- df_trajectory_full %>% filter(exposure_type == "inf") %>%
    mutate(above_5 = value >= log10(4)) %>% filter(above_5) %>% group_by(exposure_type, biomarker, sample, covar) %>% filter(time == max(time))
 
 df_o4_all %>% pull(time) %>% sum_func
+
+# Extract antibody kinetics information for results text
+cat("=== ANTIBODY KINETICS VALUES FOR RESULTS ===\n")
+
+# Function to get median and 95% CrI
+get_median_95ci <- function(x) {
+    data.frame(
+        median = median(x),
+        lb = quantile(x, 0.025),
+        ub = quantile(x, 0.975)
+    )
+}
+
+# Peak fold-rise by age group
+peak_kinetics <- df_trajectory_compare %>% 
+    group_by(age_group) %>% 
+    summarise(get_median_95ci(value)) %>%
+    mutate(peak_fold_rise = 10^median,
+           peak_fold_rise_lb = 10^lb,
+           peak_fold_rise_ub = 10^ub)
+
+cat("Peak fold-rise by age group:\n")
+print(peak_kinetics)
+
+# Young children (≤5 years) peak
+young_children_peak <- peak_kinetics %>% filter(age_group == "≤5")
+young_children_peak_median <- round(young_children_peak$peak_fold_rise, 1)
+young_children_peak_lb <- round(young_children_peak$peak_fold_rise_lb, 1)
+young_children_peak_ub <- round(young_children_peak$peak_fold_rise_ub, 1)
+
+cat("Young children (≤5 years) peak fold-rise:", young_children_peak_median, 
+    "(95% CrI:", young_children_peak_lb, "-", young_children_peak_ub, ")\n")
+
+# Oldest group (75+ years) peak
+oldest_peak <- peak_kinetics %>% filter(age_group == "75+")
+oldest_peak_median <- round(oldest_peak$peak_fold_rise, 1)
+oldest_peak_lb <- round(oldest_peak$peak_fold_rise_lb, 1)
+oldest_peak_ub <- round(oldest_peak$peak_fold_rise_ub, 1)
+
+cat("Oldest group (75+ years) peak fold-rise:", oldest_peak_median, 
+    "(95% CrI:", oldest_peak_lb, "-", oldest_peak_ub, ")\n")
+
+# Persistence (days above 4-fold rise) by age group
+persistence_kinetics <- df_trajectory_o5 %>% 
+    group_by(age_group) %>% 
+    summarise(get_median_95ci(time))
+
+cat("Days above 4-fold rise by age group:\n")
+print(persistence_kinetics)
+
+# Age 60-74 persistence
+age_60_74_persistence <- persistence_kinetics %>% filter(age_group == "60-74")
+age_60_74_duration_mean <- round(age_60_74_persistence$median, 0)
+age_60_74_duration_lb <- round(age_60_74_persistence$lb, 0)
+age_60_74_duration_ub <- round(age_60_74_persistence$ub, 0)
+
+cat("Age 60-74 persistence:", age_60_74_duration_mean, 
+    "days (95% CrI:", age_60_74_duration_lb, "-", age_60_74_duration_ub, ")\n")
+
+# Young children persistence
+young_children_duration_mean <- round(persistence_kinetics$median[persistence_kinetics$age_group == "≤5"], 0)
+young_children_duration_lb <- round(persistence_kinetics$lb[persistence_kinetics$age_group == "≤5"], 0)
+young_children_duration_ub <- round(persistence_kinetics$ub[persistence_kinetics$age_group == "≤5"], 0)
+
+cat("Young children persistence:", young_children_duration_mean, 
+    "days (95% CrI:", young_children_duration_lb, "-", young_children_duration_ub, ")\n")
+
+# Oldest group persistence
+oldest_duration_mean <- round(persistence_kinetics$median[persistence_kinetics$age_group == "75+"], 0)
+oldest_duration_lb <- round(persistence_kinetics$lb[persistence_kinetics$age_group == "75+"], 0)
+oldest_duration_ub <- round(persistence_kinetics$ub[persistence_kinetics$age_group == "75+"], 0)
+
+cat("Oldest group persistence:", oldest_duration_mean, 
+    "days (95% CrI:", oldest_duration_lb, "-", oldest_duration_ub, ")\n")
+
+# Create summary for markdown
+abkin_info <- list(
+    young_children_peak_median = young_children_peak_median,
+    young_children_peak_lb = young_children_peak_lb,
+    young_children_peak_ub = young_children_peak_ub,
+    oldest_peak_median = oldest_peak_median,
+    oldest_peak_lb = oldest_peak_lb,
+    oldest_peak_ub = oldest_peak_ub,
+    age_60_74_duration_mean = age_60_74_duration_mean,
+    age_60_74_duration_lb = age_60_74_duration_lb,
+    age_60_74_duration_ub = age_60_74_duration_ub,
+    young_children_duration_mean = young_children_duration_mean,
+    young_children_duration_lb = young_children_duration_lb,
+    young_children_duration_ub = young_children_duration_ub,
+    oldest_duration_mean = oldest_duration_mean,
+    oldest_duration_lb = oldest_duration_lb,
+    oldest_duration_ub = oldest_duration_ub
+)
+
+# Save the information
+saveRDS(abkin_info, file = here::here("markdown", "abkin_info.RDS"))

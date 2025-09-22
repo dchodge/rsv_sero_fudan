@@ -144,6 +144,9 @@ df_metrics_full <- data.frame(
 ###### AGE-SPECIFIC DATA ###### 
 ###### ###### ###### ###### ###### 
 
+age_groups_i <- c("≤5", "5-18", "19-59", "60-74", "75+")
+
+
 y_hat_new_post_age <- post_A$draws() %>% spread_draws(y_hat_rel_age[i, j], y_prot_age[i, j], y_hat_new_age[i, j], x_new[i]) %>% 
     mutate(age_group = recode(j, `1` = "≤5", `2` = "5-18", `3` = "19-59", `4` = "60-74", `5` = "75+")) %>% 
     mutate(age_group = factor(age_group, levels = c("≤5", "5-18", "19-59", "60-74", "75+"))) 
@@ -308,7 +311,82 @@ cat("- Basic CSV: outputs/manu/main/df_metrics_age_full.csv\n\n")
 print(gt_table)
 
 # Display the raw data
-df_metrics_age_full 
+df_metrics_age_full
+
+# Extract COP information for results text
+cat("=== COP VALUES FOR RESULTS ===\n")
+
+# Overall COP metrics
+cat("Overall COP metrics:\n")
+cat("AUC:", round(df_metrics_full$auc, 3), "\n")
+cat("Coverage:", round(df_metrics_full$coverage, 3), "\n")
+cat("AMG (median):", round(df_metrics_full$improvement * 100, 0), "%\n")
+cat("AMG (log10 4):", round(df_metrics_full$improvement_4 * 100, 0), "%\n")
+
+# Protection thresholds
+cat("\nProtection thresholds:\n")
+print(df_thresholds)
+
+# Extract 75% and 90% protection thresholds
+threshold_75 <- df_thresholds %>% filter(y_prot == "75%")
+threshold_90 <- df_thresholds %>% filter(y_prot == "90%")
+
+threshold_75_median <- round(threshold_75$mean, 1)
+threshold_75_lb <- round(threshold_75$lb, 1)
+threshold_75_ub <- round(threshold_75$ub, 1)
+
+threshold_90_median <- round(threshold_90$mean, 1)
+threshold_90_lb <- round(threshold_90$lb, 1)
+threshold_90_ub <- round(threshold_90$ub, 1)
+
+cat("75% protection threshold:", threshold_75_median, "(95% CrI:", threshold_75_lb, "-", threshold_75_ub, ")\n")
+cat("90% protection threshold:", threshold_90_median, "(95% CrI:", threshold_90_lb, "-", threshold_90_ub, ")\n")
+
+# Age-specific COP metrics
+cat("\nAge-specific COP metrics:\n")
+print(df_metrics_age_full)
+
+# Extract age-specific values
+age_leq5_metrics <- df_metrics_age_full %>% filter(age_group == "≤5")
+age_5_18_metrics <- df_metrics_age_full %>% filter(age_group == "5-18")
+age_19_59_metrics <- df_metrics_age_full %>% filter(age_group == "19-59")
+age_60_74_metrics <- df_metrics_age_full %>% filter(age_group == "60-74")
+age_75plus_metrics <- df_metrics_age_full %>% filter(age_group == "75+")
+
+# Create summary for markdown
+cop_info <- list(
+    # Overall COP
+    cop_auc = round(df_metrics_full$auc, 3),
+    cop_coverage = round(df_metrics_full$coverage, 3),
+    amg_median = round(df_metrics_full$improvement * 100, 0),
+    amg_log4 = round(df_metrics_full$improvement_4 * 100, 0),
+    
+    # Thresholds
+    threshold_75_median = threshold_75_median,
+    threshold_75_lb = threshold_75_lb,
+    threshold_75_ub = threshold_75_ub,
+    threshold_90_median = threshold_90_median,
+    threshold_90_lb = threshold_90_lb,
+    threshold_90_ub = threshold_90_ub,
+    
+    # Age-specific AUC
+    age_leq5_auc = round(age_leq5_metrics$auc, 2),
+    age_5_18_auc = round(age_5_18_metrics$auc, 2),
+    age_19_59_auc = round(age_19_59_metrics$auc, 2),
+    age_60_74_auc = round(age_60_74_metrics$auc, 2),
+    age_75plus_auc = round(age_75plus_metrics$auc, 2),
+    
+    # Age-specific Coverage
+    age_leq5_coverage = round(age_leq5_metrics$coverage, 2),
+    age_5_18_coverage = round(age_5_18_metrics$coverage, 2),
+    age_19_59_coverage = round(age_19_59_metrics$coverage, 2),
+    age_60_74_coverage = round(age_60_74_metrics$coverage, 2),
+    age_75plus_coverage = round(age_75plus_metrics$coverage, 2)
+)
+
+# Save the information
+saveRDS(cop_info, file = here::here("markdown", "cop_info.RDS"))
+
 
 
 p1 <- y_hat_new_post_age %>% 
@@ -357,17 +435,6 @@ p4 <- df_thresholds_age %>% mutate(age_group = factor(age_group, levels = c("≤
 p3 / p4
 ggsave(here::here("outputs", "manu", "main", "age_cop.pdf"), width = 10, height = 10)
 ggsave(here::here("outputs", "manu", "main", "age_cop.png"), width = 10, height = 10)
-
-
-
-
-
-
-
-
-
-
-
 
 
 post_A$draws() %>% spread_draws( x0_deviation[j]) 
