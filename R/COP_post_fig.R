@@ -8,6 +8,9 @@ library(purrr)
 library(patchwork)
 library(gt)
 
+data_t <- fitfull$data_t
+
+
 get_auc <- function(true_labels, predicted_probs) {
         roc_obj <- roc(true_labels, predicted_probs)
         data.frame(
@@ -95,8 +98,8 @@ p1 <- df_cop %>%
     theme_minimal() +
     guides(color = "none", fill = "none") +
 #scale_x_continuous(breaks = seq(0, 1, length.out = 10), labels = labels_x_spike) + 
-    labs(x = "PreF titre (log10)", y = "Posterior probability of infection", color = "Biomarker", fill = "Biomarker") + 
-    ggtitle("A. Fitted curves for infection risk") + theme_ft()
+    labs(x = "PreF titre (log10)", y = "Posterior probability of infection", color = "Biomarker", size = "Sample size", fill = "Biomarker") + 
+    ggtitle("A. Fitted curves for infection risk") + theme_ft() + theme(legend.position = "top")
 
 p2 <- df_cop %>% 
     ggplot() +
@@ -395,11 +398,11 @@ p1 <- y_hat_new_post_age %>%
     stat_lineribbon(aes(x = x_new, y = y_hat_new_age, fill = age_group), .width = 0.95, alpha = 0.2) + 
     geom_point(data = cop_age_s_sum, aes(x = titre_group, y = prop, color = age_group, size = n), alpha = 1) +
     facet_wrap(vars(biomarker)) + theme_minimal() +
-    guides(color = "none", fill = "none", size = "none") +
+    guides(color = "none", fill = "none") +
     facet_wrap(vars(age_group)) +
 #scale_x_continuous(breaks = seq(0, 1, length.out = 10), labels = labels_x_spike) + 
-    labs(x = "PreF titre (log10)", y = "Posterior probability of infection", color = "Biomarker", fill = "Biomarker") + 
-    ggtitle("A. Age-specific fitted curves for infection risk") + theme_ft()
+    labs(x = "PreF titre (log10)", y = "Posterior probability of infection", color = "Biomarker", size = "Sample size", fill = "Biomarker") +
+    ggtitle("A. Age-specific fitted curves for infection risk") + theme_ft()  + theme(legend.position = "top") 
 
 
 p2 <- y_hat_new_post_age %>% 

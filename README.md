@@ -119,7 +119,7 @@ This repository contains the analysis of respiratory syncytial virus (RSV) serol
 
 ## Contact
 
-For questions about this analysis, please contact david_hodgson1991@hotmail.co.uk
+For questions about this analysis, please contact david.hodgson@charite.de
 
 ## License
 
