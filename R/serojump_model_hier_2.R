@@ -42,6 +42,8 @@ exp_prior <- read.csv(file = here::here("data_clean", "fudan", "exp_prior.csv"))
 hierdata <- data_titre %>% select(id, age_group) %>% unique %>% mutate(age_group = as.numeric(age_group)) %>% pull(age_group) 
 M <- hierdata %>% unique %>% length
 
+hierdata %>% table
+
 # Define the biomarkers and exposure types in the model
 biomarkers <- c("PreF")
 exposureTypes <- c("none", "inf")

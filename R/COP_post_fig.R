@@ -8,6 +8,26 @@ library(purrr)
 library(patchwork)
 library(gt)
 
+# Load the fitted serological jump model results
+# This contains the posterior estimates of infection timing and antibody kinetics
+model_summary <- readRDS(here::here("outputs", "fits", "fudan_e3", "base_hier_2", paste0("model_summary.RDS")))
+
+# =============================================================================
+# Extract Model Components and Prepare Data
+# =============================================================================
+
+# Extract the fitted model object and posterior samples
+fitfull <- model_summary$fit      # Fitted model object
+outputfull <- model_summary$post  # Posterior samples
+
+# Get MCMC chain information
+N_chains <- outputfull$n_chains   # Number of MCMC chains
+n_post <- outputfull$n_post       # Number of posterior samples per chain
+
+# Create chain identifier vector for plotting
+chain_samples <- 1:N_chains %>% map(~c(rep(.x, n_post))) %>% unlist
+
+# Extract original data used in the model
 data_t <- fitfull$data_t
 
 
