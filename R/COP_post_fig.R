@@ -266,6 +266,10 @@ create_gt_table <- function(df, columns_to_color, title = "C. Age-Specific Metri
     tab_header(
       title = title,
     ) %>%
+    # Format column label with subscript
+    cols_label(
+      `AMG (log_10 4)` = html("AMG (log<sub>10</sub> 4)")
+    ) %>%
     tab_style(
       style = cell_text(weight = "bold"),
       locations = cells_title("title")
